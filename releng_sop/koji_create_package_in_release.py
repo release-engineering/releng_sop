@@ -73,7 +73,7 @@ def get_parser():
     parser.add_argument(
         "--owner",
         required=True,
-        help="Owner package",
+        help="Package owner",
     )
     parser.add_argument(
         "--env",
