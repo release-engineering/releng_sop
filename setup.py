@@ -19,6 +19,7 @@ setup(
     include_package_data=True,
     scripts=[
         "bin/koji-block-package-in-release",
+        "bin/koji-create-package-in-release",
     ],
     test_suite="tests",
 )

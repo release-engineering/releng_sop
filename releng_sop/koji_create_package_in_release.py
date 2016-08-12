@@ -10,12 +10,13 @@ import subprocess
 from .common import Environment, Release
 
 
-class KojiBlockPackageInRelease(object):
-    def __init__(self, env, release_id, packages):
+class KojiCreatePackageInRelease(object):
+    def __init__(self, env, owner, release_id, packages):
         self.env = env
         self.release_id = release_id
         self.release = Release(self.release_id)
         self.packages = sorted(packages)
+        self.owner = owner
 
     def print_details(self, commit=False):
         print("Blocking packages in a release")
@@ -24,6 +25,7 @@ class KojiBlockPackageInRelease(object):
         print(" * release source           %s" % self.release.config_path)
         print(" * koji profile:            %s" % self.env["koji_profile"])
         print(" * release_id:              %s" % self.release_id)
+        print(" * owner:                   %s" % self.owner)
         print(" * tag:                     %s" % self.release["koji"]["tag_release"])
         print(" * packages:")
         for i in self.packages:
@@ -35,7 +37,8 @@ class KojiBlockPackageInRelease(object):
         cmd = []
         cmd.append("koji")
         cmd.append("--profile=%s" % self.env["koji_profile"])
-        cmd.append("block-pkg")
+        cmd.append("add-pkg")
+        cmd.append("--owner=%s" %self.owner)
         cmd.append(self.release["koji"]["tag_release"])
         cmd.extend(self.packages)
         if not commit:
@@ -50,7 +53,7 @@ class KojiBlockPackageInRelease(object):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description="Block packages in a koji tag that maps to given release.")
+    parser = argparse.ArgumentParser(description="Create packages in a koji tag that maps to given release.")
     parser.add_argument(
         "release_id",
         metavar="RELEASE_ID",
@@ -68,6 +71,11 @@ def get_parser():
         help="Program performs a dry-run by default. Enable this option to apply the changes.",
     )
     parser.add_argument(
+        "--owner",
+        required=True,
+        help="Owner package",
+    )
+    parser.add_argument(
         "--env",
         help="Select environment in which the program will make changes.",
     )
@@ -78,7 +86,7 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
     env = Environment(args.env)
-    clone = KojiBlockPackageInRelease(env, args.release_id, args.packages)
+    clone = KojiCreatePackageInRelease(env, args.owner, args.release_id, args.packages)
     clone.run(commit=args.commit)
 
 
