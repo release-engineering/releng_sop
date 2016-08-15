@@ -9,14 +9,10 @@ import subprocess
 
 from .common import Environment, Release
 
+from .kojibase import KojiBase
 
-class KojiBlockPackageInRelease(object):
-    def __init__(self, env, release_id, packages):
-        self.env = env
-        self.release_id = release_id
-        self.release = Release(self.release_id)
-        self.packages = sorted(packages)
 
+class KojiBlockPackageInRelease(KojiBase):
     def print_details(self, commit=False):
         print("Blocking packages in a release")
         print(" * env name:                %s" % self.env.name)
@@ -35,18 +31,12 @@ class KojiBlockPackageInRelease(object):
         cmd = []
         cmd.append("koji")
         cmd.append("--profile=%s" % self.env["koji_profile"])
-        cmd.append("block-pkg")
+        cmd.append("add-pkg")
         cmd.append(self.release["koji"]["tag_release"])
         cmd.extend(self.packages)
         if not commit:
             cmd = ["echo"] + cmd
         return cmd
-
-    def run(self, commit=False):
-        self.print_details(commit=commit)
-        cmd = self.get_cmd(commit=commit)
-        print(cmd)
-        subprocess.check_output(cmd)
 
 
 def get_parser():

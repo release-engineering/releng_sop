@@ -8,14 +8,12 @@ import argparse
 import subprocess
 
 from .common import Environment, Release
+from .kojibase import KojiBase
 
 
-class KojiCreatePackageInRelease(object):
-    def __init__(self, env, owner, release_id, packages):
-        self.env = env
-        self.release_id = release_id
-        self.release = Release(self.release_id)
-        self.packages = sorted(packages)
+class KojiCreatePackageInRelease(KojiBase):
+    def __init__(self, env, release_id, packages, owner):
+        super(KojiCreatePackageInRelease,self).__init__(env, release_id, packages)
         self.owner = owner
 
     def print_details(self, commit=False):
@@ -44,12 +42,6 @@ class KojiCreatePackageInRelease(object):
         if not commit:
             cmd = ["echo"] + cmd
         return cmd
-
-    def run(self, commit=False):
-        self.print_details(commit=commit)
-        cmd = self.get_cmd(commit=commit)
-        print(cmd)
-        subprocess.check_output(cmd)
 
 
 def get_parser():
@@ -86,7 +78,7 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
     env = Environment(args.env)
-    clone = KojiCreatePackageInRelease(env, args.owner, args.release_id, args.packages)
+    clone = KojiCreatePackageInRelease(env, args.release_id, args.packages, args.owner)
     clone.run(commit=args.commit)
 
 
