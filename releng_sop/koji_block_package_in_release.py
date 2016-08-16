@@ -31,7 +31,7 @@ class KojiBlockPackageInRelease(KojiBase):
         cmd = []
         cmd.append("koji")
         cmd.append("--profile=%s" % self.env["koji_profile"])
-        cmd.append("add-pkg")
+        cmd.append("block-pkg")
         cmd.append(self.release["koji"]["tag_release"])
         cmd.extend(self.packages)
         if not commit:
