@@ -13,13 +13,16 @@ setup(
     author_email="dmach@redhat.com",
     license="MIT",
     install_requires=[
-        "pyxdg"
+        "pyxdg",
+        "productmd",
+        "six"
     ],
     packages=find_packages(),
     include_package_data=True,
     scripts=[
         "bin/koji-block-package-in-release",
         "bin/koji-create-package-in-release",
+        "bin/koji-clone-tag-for-release-milestone",
     ],
     test_suite="tests",
 )
