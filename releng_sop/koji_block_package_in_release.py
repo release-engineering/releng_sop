@@ -40,7 +40,10 @@ class KojiBlockPackageInRelease(KojiBase):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description="Block packages in a koji tag that maps to given release.")
+    parser = argparse.ArgumentParser(
+        description="Block packages in a koji tag that maps to given release.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "release_id",
         metavar="RELEASE_ID",
@@ -59,6 +62,7 @@ def get_parser():
     )
     parser.add_argument(
         "--env",
+        default="default",
         help="Select environment in which the program will make changes.",
     )
     return parser

@@ -69,11 +69,6 @@ class Environment(ConfigBase):
     config_subdir = "environments"
     default_config = "default"
 
-    def __init__(self, name=None, config_dirs=None):
-        # make 'name' argument optional, use 'default' environment by default
-        name = name or "default"
-        super(Environment, self).__init__(name, config_dirs)
-
 
 class Release(ConfigBase):
     config_subdir = "releases"
