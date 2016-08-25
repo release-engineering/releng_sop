@@ -91,7 +91,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         ;;
     body)
         # whitespace only and comment lines are not checked
-        if [[ ! $line =~ ^[[:space:]]*$ && ! line =~ ^\#.*$ ]]; then
+        if [[ ! $line =~ ^[[:space:]]*$ && ! $line =~ ^\#.*$ ]]; then
             check_body "$line"
         fi
         ;;
