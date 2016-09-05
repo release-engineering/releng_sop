@@ -13,7 +13,21 @@ __all__ = (
     "Environment",
     "Release",
     "get_logger",
+    "Error",
+    "ConfigError",
 )
+
+
+class Error(Exception):
+    """Base class for releng-sop errors."""
+
+    pass
+
+
+class ConfigError(Error):
+    """Error to be raised for configuration errors."""
+
+    pass
 
 
 class ConfigBase(object):
@@ -52,7 +66,9 @@ class ConfigBase(object):
             if os.path.exists(path):
                 self.config_path = path
                 return
-        raise RuntimeError("Couldn't find config file '%s' in following locations:\n%s" % (filename, "\n".join(self.config_dirs)))
+
+        message = "Couldn't find config file '%s' in following locations:\n%s"
+        raise ConfigError(message % (filename, "\n".join(self.config_dirs)))
 
     def _read_config(self):
         """

@@ -12,7 +12,7 @@ import sys
 DIR = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(DIR, ".."))
 
-from releng_sop.common import Environment, Release  # noqa: E402
+from releng_sop.common import Environment, Release, ConfigError  # noqa: E402
 
 
 RELEASES_DIR = os.path.join(DIR, "releases")
@@ -114,14 +114,14 @@ class TestConfigDataNotFound(unittest.TestCase):
         """Raise RuntimeError when release data no found."""
         release_id = "no-such-release"
 
-        self.assertRaises(RuntimeError,
+        self.assertRaises(ConfigError,
                           Release, release_id, config_dirs=[RELEASES_DIR])
 
     def test_environment_not_found(self):
         """Raise RuntimeError when environment configuration no found."""
         env_id = "no-such-environment"
 
-        self.assertRaises(RuntimeError,
+        self.assertRaises(ConfigError,
                           Environment, env_id, config_dirs=[ENVIRONMENTS_DIR])
 
 

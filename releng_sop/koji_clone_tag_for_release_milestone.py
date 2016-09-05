@@ -17,11 +17,14 @@ milestone_tag is main release tag + name of milestone + milestone major version 
 
 
 from __future__ import print_function
+from __future__ import unicode_literals
+import sys
 
 import argparse
+
 from productmd.composeinfo import verify_label as verify_milestone
 
-from .common import Environment, Release
+from .common import Environment, Release, Error
 from .kojibase import KojiBase
 
 
@@ -107,7 +110,10 @@ def get_parser():
     :returns: ArgumentParser object with arguments set up.
     :rtype: argparse.ArgumentParser
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Clone tag for release milestone.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "release_id",
         metavar="RELEASE_ID",
@@ -128,18 +134,29 @@ def get_parser():
         default="default",
         help="Select environment in which the program will make changes.",
     )
+    parser.add_argument(
+        "-d", "--debug",
+        action="store_true",
+        help="Print traceback for exceptions. By default only exception messages are displayed.",
+    )
     return parser
 
 
 def main():
     """Main function."""
-    parser = get_parser()
-    args = parser.parse_args()
-    env = Environment(args.env)
-    release = Release(args.release_id)
-    clone = KojiCloneTagForReleaseMilestone(env, release, args.milestone)
-    clone.run(commit=args.commit)
+    try:
+        parser = get_parser()
+        args = parser.parse_args()
 
+        env = Environment(args.env)
+        release = Release(args.release_id)
+        clone = KojiCloneTagForReleaseMilestone(env, release, args.milestone)
+        clone.run(commit=args.commit)
+
+    except Error as e:
+        if not args.debug:
+            sys.tracebacklimit = 0
+        raise e
 
 if __name__ == "__main__":
     main()

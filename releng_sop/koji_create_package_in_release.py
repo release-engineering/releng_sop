@@ -13,10 +13,11 @@ RELEASE_TAG is the "tag_release" key from the release configuration
 
 from __future__ import print_function
 from __future__ import unicode_literals
+import sys
 
 import argparse
 
-from .common import Environment, Release
+from .common import Environment, Release, Error
 from .kojibase import KojiBase
 
 
@@ -92,7 +93,7 @@ def get_parser():
     :returns: ArgumentParser object with arguments set up.
     """
     parser = argparse.ArgumentParser(
-        description="Block packages in a koji tag that maps to given release.",
+        description="Create packages in a koji tag that maps to given release.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -122,18 +123,29 @@ def get_parser():
         default="default",
         help="Select environment in which the program will make changes.",
     )
+    parser.add_argument(
+        "-d", "--debug",
+        action="store_true",
+        help="Print traceback for exceptions. By default only exception messages are displayed.",
+    )
     return parser
 
 
 def main():
     """Main function."""
-    parser = get_parser()
-    args = parser.parse_args()
-    env = Environment(args.env)
-    release = Release(args.release_id)
-    clone = KojiCreatePackageInRelease(env, release, args.packages, args.owner)
-    clone.run(commit=args.commit)
+    try:
+        parser = get_parser()
+        args = parser.parse_args()
 
+        env = Environment(args.env)
+        release = Release(args.release_id)
+        clone = KojiCreatePackageInRelease(env, release, args.packages, args.owner)
+        clone.run(commit=args.commit)
+
+    except Error as e:
+        if not args.debug:
+            sys.tracebacklimit = 0
+        raise e
 
 if __name__ == "__main__":
     main()
