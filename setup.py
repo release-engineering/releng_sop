@@ -15,7 +15,9 @@ setup(
     install_requires=[
         "pyxdg",
         "productmd",
-        "six"
+        "six",
+        "pdc-client",
+        "pulp"
     ],
     packages=find_packages(),
     include_package_data=True,
@@ -23,7 +25,8 @@ setup(
         "bin/koji-block-package-in-release",
         "bin/koji-create-package-in-release",
         "bin/koji-clone-tag-for-release-milestone",
+        "bin/pulp-clear-repos"
     ],
     test_suite="tests",
-    tests_require=["mock", "six"]
+    tests_require=["mock", "six", "pdc-client", "pulp"]
 )

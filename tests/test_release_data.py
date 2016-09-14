@@ -3,6 +3,7 @@
 """
 Tests for configuration data.
 """
+from __future__ import unicode_literals
 
 import unittest
 
@@ -102,6 +103,7 @@ class TestEnvironmentData(unittest.TestCase):
             expected = [
                 "distgit_server",
                 "koji_profile",
+                "pdc_server",
                 "pulp_server",
                 "rpmsign_class",
             ]

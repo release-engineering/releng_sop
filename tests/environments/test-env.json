@@ -1,6 +1,7 @@
 {
     "distgit_server": "pkgs.example.com",
     "koji_profile": "test",
+    "pdc_server": "pdc-test",
     "pulp_server": "pulp-test",
     "rpmsign_class": "releng_sop.koji_sign.LocalRPMSign"
 }
