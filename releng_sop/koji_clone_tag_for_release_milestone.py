@@ -153,10 +153,10 @@ def main():
         clone = KojiCloneTagForReleaseMilestone(env, release, args.milestone)
         clone.run(commit=args.commit)
 
-    except Error as e:
+    except Error:
         if not args.debug:
             sys.tracebacklimit = 0
-        raise e
+        raise
 
 if __name__ == "__main__":
     main()

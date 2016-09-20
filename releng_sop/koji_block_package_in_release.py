@@ -130,10 +130,10 @@ def main():
         clone = KojiBlockPackageInRelease(env, release, args.packages)
         clone.run(commit=args.commit)
 
-    except Error as e:
+    except Error:
         if not args.debug:
             sys.tracebacklimit = 0
-        raise e
+        raise
 
 
 if __name__ == "__main__":

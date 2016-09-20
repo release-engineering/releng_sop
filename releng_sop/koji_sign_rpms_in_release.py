@@ -11,11 +11,12 @@ and write signed copies in koji.
 
 from __future__ import print_function
 from __future__ import unicode_literals
+import sys
 
 import argparse
 import logging
 
-from .common import Environment, Release
+from .common import Environment, Release, Error, ConfigError
 from .koji_sign import KojiSignRPMs, get_rpmsign_class
 
 
@@ -61,17 +62,17 @@ class KojiSignRPMsInRelease(object):
             result = self.release["koji"].get("tag_release")
         if result:
             return result
-        raise ValueError("Neither compose or release tag is set for release: %s" % self.release_id)
+        raise ConfigError("Neither compose or release tag is set for release: %s" % self.release_id)
 
     def _get_sigkeys(self):
         """
         Get list of sigkeys according to the signing level.
         """
         if self.level == "beta":
-            return[self.release["signing"]["sigkey_beta"], self.release["signing"]["sigkey_gold"]]
+            return [self.release["signing"]["sigkey_beta"], self.release["signing"]["sigkey_gold"]]
         elif self.level == "gold":
-            return[self.release["signing"]["sigkey_gold"]]
-        raise ValueError("Unknown level: %s" % self.level)
+            return [self.release["signing"]["sigkey_gold"]]
+        raise ConfigError("Unknown level: %s" % self.level)
 
     def details(self, commit=False):
         """
@@ -180,12 +181,18 @@ def main():
     """
     Main function.
     """
-    parser = get_parser()
-    args = parser.parse_args()
-    env = Environment(args.env)
-    release = release = Release(args.release_id)
-    sign = KojiSignRPMsInRelease(env, release, args.level, packages=args.packages, just_sign=args.just_sign, just_write=args.just_write)
-    sign.run(commit=args.commit)
+    try:
+        parser = get_parser()
+        args = parser.parse_args()
+        env = Environment(args.env)
+        release = Release(args.release_id)
+        sign = KojiSignRPMsInRelease(env, release, args.level, packages=args.packages, just_sign=args.just_sign, just_write=args.just_write)
+        sign.run(commit=args.commit)
+
+    except Error:
+        if not args.debug:
+            sys.tracebacklimit = 0
+        raise
 
 
 if __name__ == "__main__":
