@@ -23,6 +23,7 @@ Commandline Interface
     :maxdepth: 2
 
     cli_koji
+    cli_pulp
 
 Code docs
 =========

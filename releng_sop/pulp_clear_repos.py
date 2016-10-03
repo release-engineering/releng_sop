@@ -22,28 +22,23 @@ from .kojibase import KojiBase
 
 
 class PulpClearRepos(KojiBase):
-    """Pulp clear repos.
+    """Clear Pulp repos.
 
-    :param release_id:          Name of release.
-    :type release_id:           string
+    :param env:                Environment object to be used to execute the commands.
+    :type env:                 Environment
+    :note env:                 Keys 'pulp_server' and 'pdc_server' are used.
 
-    :param service:             Name of service.
-    :type service:              string
+    :param release:            Release object.
+    :type release:             Release
 
-    :param repo_family:         Name of repo_family.
-    :type repo_family:          string
+    :param repo_family:        Repo family to be cleared.
+    :type repo_family:         string
 
-    :param content_format:      Name of content_format.
-    :type content_format:       string
+    :param variants:           Variants to be filtered for.
+    :type variant:             list of strings
 
-    :param variant_uid:         Name of variant_uid.
-    :type variant_uid:          string
-
-    :param arch:                Name of arch.
-    :type arch:                 string
-
-    :param client:              Client object.
-    :type client:               PDCClient
+    :param arch:               Architectures to be filtered for.
+    :type arch:                list of strings
     """
 
     def __init__(self, env, release, repo_family, variants, arches):  # noqa: D102
@@ -56,19 +51,29 @@ class PulpClearRepos(KojiBase):
         self.pulp_password = self.pulp_config["client"].get("password")
 
     def password_prompt(self, force=False, commit=False):
-        """Get password."""
-        if commit:
-            result = self.pulp_password
+        """Get password to authenticate with Pulp.
 
-            if force:
-                result = ""
+        :param force:    Always ask for password, even if present in Pulp config
+        :type force:     Boolean
 
-            while not result:
-                prompt = "Enter Pulp password for %s@%s: " % (self.pulp_config["client"]["user"], self.pulp_config.name)
-                result = getpass.getpass(prompt=prompt)
+        :param commit:   Flag to indicate if password is required for a commit action.
+                         If not set, password will not be asked for.
+        :type commit:    Boolean
+        """
+        if not commit:
+            return
 
-            self.pulp_password = result
-        pass
+        result = self.pulp_password
+
+        if force:
+            result = ""
+
+        while not result:
+            msg = "Enter Pulp password for %s@%s: "
+            prompt = msg % (self.pulp_config["client"]["user"], self.pulp_config.name)
+            result = getpass.getpass(prompt=prompt)
+
+        self.pulp_password = result
 
     def query_repo(self):
         """Get list names of pdc repo."""
@@ -100,32 +105,6 @@ class PulpClearRepos(KojiBase):
         """
         self.query_repo()
 
-        '''details = [
-        "Pulp clear repos",
-        " * env name:                %s" % self.env.name,
-        " * env config:              %s" % self.env.config_path,
-        " * release source           %s" % self.release.config_path,
-        " * release_id:              %s" % self.release_id,
-        " * repo_family:             %s" % self.repo_family,
-        " * PDC server:              %s" % self.env["pdc_server"],
-        ]
-        if self.arches:
-            details += [" * arches:"]
-            for i in self.arches:
-                details += ["     %s" % i]
-        if self.variants:
-            details += [" * variants:"]
-            for i in self.variants:
-                details += ["     %s" % i]
-        details += [" * repos:"]
-        if not self.repos:
-            details += ["     No repos found."]
-        for i in self.repos:
-            details += ["     %s" % i]
-        if not commit:
-            details += ["*** TEST MODE ***"]
-        return details'''
-
         details = "Pulp clear repos\n"
         details += " * env name:                %s\n" % self.env.name
         details += " * env config:              %s\n" % self.env.config_path
@@ -155,25 +134,40 @@ class PulpClearRepos(KojiBase):
 
     def get_cmd(self, add_password=False, commit=False):
         """
-        Construct the koji command.
+        Construct the Pulp commands.
+
+        :param add_password: Flag to indicate wether password should be added
+                             to the commands.
+        :type add_password:  Boolean (default: False)
 
         :param commit: Flag to indicate if the command will be actually executed.
                        Add "--test" to the command, if this is False.
         :type commit: boolean=False
-        :return: Pulp command
-        :rtype: list of strings
+
+        :return: Pulp commands
+        :rtype:  list of list of strings
         """
+        # password is added only if requested and this is commit action
+        password = []
+        if add_password and commit:
+            password = ["--password=%s" % self.pulp_password]
+
+        # echo is added if this is not a commit action
+        echo = []
+        if not commit:
+            echo = ['echo']
+
         commands = []
         for repo in self.repos:
             cmd = []
             cmd.append("pulp-admin")
             cmd.append("--config=%s" % self.pulp_config.config_path)
             cmd.append("--user=%s" % self.pulp_config["client"]["user"])
-            if add_password:
-                cmd.append("--password=%s" % self.pulp_password)
+            cmd = cmd + password
             cmd.append("rpm repo remove rpm")
             cmd.append("--filters='{}'")
             cmd.append("--repo-id %s" % repo)
+            cmd = echo + cmd
             commands.append(cmd)
         return commands
 
@@ -181,13 +175,11 @@ class PulpClearRepos(KojiBase):
         """Print command details, get command and run it."""
         details = self.details(commit=commit)
         print(details)
-        commands = self.get_cmd(commit=commit)
-        commands_print = self.get_cmd(add_password=True, commit=commit)
-        for cmd, cmd_print in zip(commands, commands_print):
+        commands_exec = self.get_cmd(add_password=True, commit=commit)
+        commands_print = self.get_cmd(add_password=False, commit=commit)
+        for cmd_exec, cmd_print in zip(commands_exec, commands_print):
             print(cmd_print)
-            print(cmd)
-            if commit:
-                subprocess.check_call(cmd)
+            subprocess.check_call(cmd_exec)
 
 
 def get_parser():
