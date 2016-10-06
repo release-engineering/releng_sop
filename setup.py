@@ -16,8 +16,7 @@ setup(
         "pyxdg",
         "productmd",
         "six",
-        "pdc-client",
-        "pulp"
+        "pdc-client"
     ],
     packages=find_packages(),
     include_package_data=True,
@@ -28,5 +27,5 @@ setup(
         "bin/pulp-clear-repos"
     ],
     test_suite="tests",
-    tests_require=["mock", "six", "pdc-client", "pulp"]
+    tests_require=["mock", "six", "pdc-client"]
 )

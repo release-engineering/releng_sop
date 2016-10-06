@@ -10,6 +10,8 @@ pulp-clear-repos
    :prog: pulp-clear-repos
 
 
+.. automodule:: releng_sop.pulp_clear_repos
+
 Manual Steps
 ~~~~~~~~~~~~
 Requirements:

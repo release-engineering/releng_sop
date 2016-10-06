@@ -1,14 +1,26 @@
 # -*- coding: utf-8 -*-
 
-"""Pulp clear repos.
-
-Construct command
-    pulp_clear_repos [--commit] RELEASE_ID REPO_FAMILY [--variant=] [--arch=]
 
 """
+Manual Steps
+~~~~~~~~~~~~
+Requirements:
 
-from __future__ import print_function
-from __future__ import unicode_literals
+
+Inputs:
+
+* **commit** - Program performs a dry-run by default. Enable this option to apply the changes.
+* **RELEASE_ID** - PDC release ID, for example 'fedora-24', 'fedora-24-updates'.
+* **REPO_FAMILY** - It is repo family in PDC.
+* **variant** - It is variant in PDC.
+* **arch** - It is arch in PDC.
+
+Steps:
+
+#  ``pulp_clear_repos [--commit] RELEASE_ID REPO_FAMILY [--variant=] ... [--arch=] ...``
+"""
+
+from __future__ import print_function, unicode_literals
 import getpass
 import sys
 import subprocess
@@ -16,7 +28,7 @@ import subprocess
 from pdc_client import PDCClient
 import argparse
 
-from .common import Environment, Release, Error
+from .common import Environment, Release, Error, UsageError
 from .common_pulp import PulpAdminConfig
 from .kojibase import KojiBase
 
@@ -78,7 +90,7 @@ class PulpClearRepos(KojiBase):
     def query_repo(self):
         """Get list names of pdc repo."""
         if self.repo_family == 'dist':
-            raise ValueError('REPO_FAMILY must never be \"dist\"')
+            raise UsageError('REPO_FAMILY must never be \"dist\"')
 
         client = PDCClient(self.env["pdc_server"], develop=True)
 
@@ -91,7 +103,6 @@ class PulpClearRepos(KojiBase):
             "variant_uid": self.variants,
         }
 
-        '''result = client.get_paged(client['content-delivery-repos']._, **data)'''
         result = client['content-delivery-repos']._(page_size=0, **data)
         self.repos = [i['name'] for i in result]
 
@@ -141,7 +152,7 @@ class PulpClearRepos(KojiBase):
         :type add_password:  Boolean (default: False)
 
         :param commit: Flag to indicate if the command will be actually executed.
-                       Add "--test" to the command, if this is False.
+                       Prepend command with 'echo', if this is false.
         :type commit: boolean=False
 
         :return: Pulp commands
@@ -164,9 +175,13 @@ class PulpClearRepos(KojiBase):
             cmd.append("--config=%s" % self.pulp_config.config_path)
             cmd.append("--user=%s" % self.pulp_config["client"]["user"])
             cmd = cmd + password
-            cmd.append("rpm repo remove rpm")
+            cmd.append("rpm")
+            cmd.append("repo")
+            cmd.append("remove")
+            cmd.append("rpm")
             cmd.append("--filters='{}'")
-            cmd.append("--repo-id %s" % repo)
+            cmd.append("--repo-id")
+            cmd.append(repo)
             cmd = echo + cmd
             commands.append(cmd)
         return commands
@@ -189,7 +204,10 @@ def get_parser():
     :returns: ArgumentParser object with arguments set up.
     :rtype: argparse.ArgumentParser
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Clear pulp repos associated with a release.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "release_id",
         metavar="RELEASE_ID",
@@ -198,21 +216,21 @@ def get_parser():
     parser.add_argument(
         "repo_family",
         metavar="REPO_FAMILY",
-        help="It is repo family in PDC.",
+        help="Repo family to be cleared, for example 'beta'. Should never be 'dist'.",
     )
     parser.add_argument(
         "--variant",
         metavar="VARIANT",
         dest="variants",
         action="append",
-        help="It is variant in PDC.",
+        help="Filter repos to be cleared to match variants.",
     )
     parser.add_argument(
         "--arch",
         metavar="ARCH",
         dest="arches",
         action="append",
-        help="It is arch in PDC.",
+        help="Filter repos to be cleared to match architectures.",
     )
     parser.add_argument(
         "--commit",
