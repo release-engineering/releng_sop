@@ -28,8 +28,8 @@ class TestPulpClearRepos(unittest.TestCase):
         "repo_family": 'htb',
         "repo_family_diff": 'ht',
         "content_format": 'rpm',
-        "arch": 'x86_64\n     s390x',
-        "variant_uid": 'Server\n     Workstation',
+        "arch": ['x86_64', 's390x'],
+        "variant_uid": ['Server', 'Workstation'],
     }
 
     release_spec = {
@@ -88,12 +88,12 @@ class TestPulpClearRepos(unittest.TestCase):
 """.format(data=data)
 
     details_arch = """ * arches:
-     {data[arch]}
-""".format(data=data)
+     {arches}
+""".format(arches="\n     ".join(data['arch']))
 
     details_variant = """ * variants:
-     {data[variant_uid]}
-""".format(data=data)
+     {variants}
+""".format(variants="\n     ".join(data['variant_uid']))
 
     details_variant_arch = """ * arches:
      {data[arch]}
@@ -411,7 +411,7 @@ class TestPulpClearRepos(unittest.TestCase):
         self.check_get_cmd(PulpAdminConfigClassMock, expected, commit, testMethod, repos, password, addpassword)
 
 
-class TestKojiCloneTagParser(ParserTestBase, unittest.TestCase):
+class TestPulpClearReposParser(ParserTestBase, unittest.TestCase):
     """Set Arguments and Parser for Test generator."""
 
     ARGUMENTS = {

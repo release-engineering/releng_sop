@@ -22,13 +22,14 @@ import sys
 import sphinx_rtd_theme
 
 # HACK: inject empty koji module to silence failing docs generation.
+# HACK: inject empty pulp.client.admin.config module to silence failing docs generation.
 # We need to add koji to deps (currently not possible)
 import imp
 sys.modules["koji"] = imp.new_module("koji")
-sys.modules["pulp"]=imp.new_module("pulp")
-sys.modules["pulp.client"]=imp.new_module("pulp.client")
-sys.modules["pulp.client.admin"]=imp.new_module("pulp.client.admin")
-sys.modules["pulp.client.admin.config"]=imp.new_module("pulp.client.admin.config")
+sys.modules["pulp"] = imp.new_module("pulp")
+sys.modules["pulp.client"] = imp.new_module("pulp.client")
+sys.modules["pulp.client.admin"] = imp.new_module("pulp.client.admin")
+sys.modules["pulp.client.admin.config"] = imp.new_module("pulp.client.admin.config")
 
 sys.path.insert(0, os.path.abspath('..'))
 

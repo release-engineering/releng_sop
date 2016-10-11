@@ -25,12 +25,6 @@ class Error(Exception):
     pass
 
 
-class UsageError(Error):
-    """Error to be raised for usage errors of scripts."""
-
-    pass
-
-
 class ConfigError(Error):
     """Error to be raised for configuration errors."""
 
