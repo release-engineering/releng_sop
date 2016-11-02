@@ -24,7 +24,8 @@ setup(
         "bin/koji-block-package-in-release",
         "bin/koji-create-package-in-release",
         "bin/koji-clone-tag-for-release-milestone",
-        "bin/pulp-clear-repos"
+        "bin/pulp-clear-repos",
+        "bin/pulp-clone-repos",
     ],
     test_suite="tests",
     tests_require=["mock", "six", "pdc-client"]

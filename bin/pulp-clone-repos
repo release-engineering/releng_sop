@@ -1,0 +1,19 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+
+import os
+import sys
+
+
+here = sys.path[0]
+if here != '/usr/bin':
+    # git checkout
+    sys.path[0] = os.path.dirname(here)
+
+
+from releng_sop.pulp_clone_repos import main
+
+
+if __name__ == "__main__":
+    main()
