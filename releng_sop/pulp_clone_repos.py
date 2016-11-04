@@ -90,7 +90,7 @@ class PulpCloneRepos(KojiBase):
             "variant_uid": self.variants,
             "content_category": self.content_category,
             "shadow": False,
-        }x
+        }
 
     def rearange(self, result):
         """Creating dictionary from repos and to repos."""
@@ -205,14 +205,14 @@ class PulpCloneRepos(KojiBase):
         if not self.result_from:
             details += "     No repos found.\n"
         else:
-            for nameF, nameT in self.cloned:
-                details += "     %s\n" % nameF
+            for x in self.cloned:
+                details += "     %s\n" % x['from']
         details += " * repo to:\n"
         if not self.result_to:
             details += "     No repos found.\n"
         else:
-            for nameF, nameT in self.cloned:
-                details += "     %s\n" % nameT
+            for x in self.cloned:
+                details += "     %s\n" % x['to']
         if not commit:
             details += "*** TEST MODE ***"
         return details
@@ -267,13 +267,13 @@ class PulpCloneRepos(KojiBase):
             subprocess.check_call(cmd_exec)
         if self.sameName:
             for x in self.sameName:
-                print ('Source and destination is the same. Cloning "%s" skipped.' % x['from'])
+                print('Source and destination is the same. Cloning "%s" skipped.' % x['from'])
         if self.missDest:
             for x in self.missDest:
-                print ('Missing destination repo. Cloning from "%s" skipped.' % x['to'])
+                print('Missing destination repo. Cloning from "%s" skipped.' % x['to'])
         if self.missSource:
             for x in self.missSource:
-                print ('Missing source repo. Cloning from "%s" skipped.' % x['to'])
+                print('Missing source repo. Cloning from "%s" skipped.' % x['to'])
 
 
 def get_parser():
