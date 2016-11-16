@@ -30,10 +30,10 @@ import argparse
 
 from .common import Environment, Release, Error, UsageError
 from .common_pulp import PulpAdminConfig
-from .kojibase import KojiBase
+from .kojibase import CommandBase
 
 
-class PulpClearRepos(KojiBase):
+class PulpClearRepos(CommandBase):
     """Clear Pulp repos.
 
     :param env:                Environment object to be used to execute the commands.
@@ -265,6 +265,7 @@ def main():
         if not args.debug:
             sys.tracebacklimit = 0
         raise
+
 
 if __name__ == "__main__":
     main()

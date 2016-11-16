@@ -29,10 +29,10 @@ import argparse
 from productmd.composeinfo import verify_label as verify_milestone
 
 from .common import Environment, Release, Error
-from .kojibase import KojiBase
+from .kojibase import CommandBase
 
 
-class KojiCloneTagForReleaseMilestone(KojiBase):
+class KojiCloneTagForReleaseMilestone(CommandBase):
     """
     Clone tag for release milestone.
 
@@ -161,6 +161,7 @@ def main():
         if not args.debug:
             sys.tracebacklimit = 0
         raise
+
 
 if __name__ == "__main__":
     main()

@@ -5,7 +5,7 @@
 import subprocess
 
 
-class KojiBase(object):
+class CommandBase(object):
     """Base class for koji commands.
 
     :param env:        Environment object to be used to execute the commands.
