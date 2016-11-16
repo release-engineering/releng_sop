@@ -129,5 +129,6 @@ class TestKojiCloneTagParser(ParserTestBase, unittest.TestCase):
 
     PARSER = get_parser()
 
+
 if __name__ == "__main__":
     unittest.main()
