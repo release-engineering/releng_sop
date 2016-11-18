@@ -11,6 +11,7 @@ import unittest
 import os
 import sys
 from mock import Mock, patch, call
+from releng_sop.common import UsageError
 
 DIR = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(DIR, ".."))
@@ -202,6 +203,50 @@ class TestPulpCloneRepos(unittest.TestCase):
         # check that the actual details are the same as the expected ones
         self.assertEquals(expected_details, actual, testMethod.__doc__)
 
+    def check_details_error(self, PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
+                            expected_query_from, expected_query_to, testMethod, query_result_from,
+                            query_result_to, commit, skip_repo_check):
+        """Check the expected and actual."""
+        # get mock instance and configure return value for get_paged
+        instance = PDCClientClassMock.return_value
+        api = instance.__getitem__.return_value
+
+        api._.side_effect = iter([query_result_from, query_result_to])
+
+        pulpAdminConfig = PulpAdminConfigClassMock.return_value
+        pulpAdminConfig.name = 'pulp-test'
+        pulpAdminConfig.config_path = 'some_path.json'
+
+        client = pulpAdminConfig.__getitem__.return_value
+        client.__getitem__.return_value = 'admin'
+
+        clone = PulpCloneRepos(self.env, self.release_from, self.release_to, self.data_from_all['repo_family'],
+                               self.data_from_all['variant_uid'], self.data_from_all['arch'],
+                               self.data_from_all['content_category'], skip_repo_check)
+        '''with self.assertRaises(UsageError) as context:
+            clone.details(commit=commit)'''
+        self.assertRaises(UsageError, clone.details, commit=commit)
+        '''# check that class constructor is called once with the value
+        # of env['pdc_server']
+        PDCClientClassMock.assert_called_once_with('pdc-test', develop=True)
+
+        instance.__getitem__.assert_called_with('content-delivery-repos')
+        # check that the API is called twice
+        self.assertEquals(instance.__getitem__.call_count, 2)
+
+        # assert_called_with behaves strangely, and making to
+        # of these won't help. Instead we have to construct
+        # a list of expected call objects, and check that
+        # this list matches the actual call list that happened
+        expected_calls = [
+            call(page_size=0, **expected_query_from),
+            call(page_size=0, **expected_query_to), ]
+
+        self.assertEquals(api._.call_args_list, expected_calls)
+
+        # check that there are exactly 2 queries made
+        self.assertEquals(instance.__getitem__()._.call_count, 2)'''
+
     @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
     def test_details_no_commit_one_repo(self, PulpAdminConfigClassMock, PDCClientClassMock):
@@ -358,7 +403,7 @@ class TestPulpCloneRepos(unittest.TestCase):
                            expected_query_from, expected_query_to, testMethod, query_result_from,
                            query_result_to, commit, skip_repo_check)
 
-    '''@patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
+    @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
     def test_details_no_commit_error(self, PulpAdminConfigClassMock, PDCClientClassMock):
         """Check details with error and two variants and without skip-repo-check,
@@ -403,9 +448,9 @@ class TestPulpCloneRepos(unittest.TestCase):
         skip_repo_check = False
 
         testMethod = TestPulpCloneRepos.test_details_no_commit_one_repo
-        self.check_details(PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
-                           expected_query_from, expected_query_to, testMethod, query_result_from,
-                           query_result_to, commit, skip_repo_check)'''
+        self.check_details_error(PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
+                                 expected_query_from, expected_query_to, testMethod, query_result_from,
+                                 query_result_to, commit, skip_repo_check)
 
     @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
@@ -563,7 +608,7 @@ class TestPulpCloneRepos(unittest.TestCase):
                            expected_query_from, expected_query_to, testMethod, query_result_from,
                            query_result_to, commit, skip_repo_check)
 
-    '''@patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
+    @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
     def test_details_with_commit_error(self, PulpAdminConfigClassMock, PDCClientClassMock):
         """Check details with error and two variants and without skip-repo-check,
@@ -608,9 +653,9 @@ class TestPulpCloneRepos(unittest.TestCase):
         skip_repo_check = False
 
         testMethod = TestPulpCloneRepos.test_details_with_commit_error
-        self.check_details(PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
-                           expected_query_from, expected_query_to, testMethod, query_result_from,
-                           query_result_to, commit, skip_repo_check)'''
+        self.check_details_error(PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
+                                 expected_query_from, expected_query_to, testMethod, query_result_from,
+                                 query_result_to, commit, skip_repo_check)
 
     def check_get_cmd(self, PulpAdminConfigClassMock, expected, commit, testMethod, cloned,
                       skip_repo_check, password, addPassword):
