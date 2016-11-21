@@ -88,6 +88,9 @@ class ConfigBase(object):
     def __getitem__(self, name):
         return self.config_data[name]
 
+    def __contains__(self, name):
+        return name in self.config_data
+
     def __iter__(self):
         for key in self.config_data:
             yield key

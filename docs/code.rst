@@ -33,6 +33,9 @@ koji_clone_tag_for_release_milestone
 .. automodule:: releng_sop.koji_clone_tag_for_release_milestone
     :members:
 
+Pulp commands
+~~~~~~~~~~~~~
+
 pulp_clear_repos
 ------------------------------------
 .. automodule:: releng_sop.pulp_clear_repos

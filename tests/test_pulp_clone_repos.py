@@ -11,19 +11,20 @@ import unittest
 import os
 import sys
 from mock import Mock, patch, call
-from releng_sop.common import UsageError
+
 
 DIR = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(DIR, ".."))
 
 from releng_sop.pulp_clone_repos import get_parser, PulpCloneRepos  # noqa
 from tests.common import ParserTestBase  # noqa
+from releng_sop.common import UsageError  # noqa
 
 
 class TestPulpCloneRepos(unittest.TestCase):
     """Tests of methods from KojiCloneTagForReleaseMilestone class."""
 
-    data_from_all = {
+    data_from = {
         "release_id": 'rhel-7.1',
         "service": "pulp",
         "repo_family": 'htb',
@@ -34,7 +35,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         "shadow": False,
     }
 
-    data_to_all = {
+    data_to = {
         "release_id": 'rhel-6.1',
         "service": "pulp",
         "repo_family": 'htb',
@@ -84,8 +85,8 @@ class TestPulpCloneRepos(unittest.TestCase):
  * PDC server:              pdc-test
  * release_id from:         {data_from[release_id]}
  * release_id to:           {data_to[release_id]}
-""".format(env=env_spec, release=release_spec_from, data_from=data_from_all,
-           data_to=data_to_all)
+""".format(env=env_spec, release=release_spec_from, data_from=data_from,
+           data_to=data_to)
 
     details_base_conti = """
  * content_format:          {data_from[content_format]}
@@ -93,8 +94,8 @@ class TestPulpCloneRepos(unittest.TestCase):
  * pulp config path:        {pulp[config_path]}
  * pulp user:               {pulp[user]}
  * repo_family:             {data_from[repo_family]}
-""".format(pulp=pulp_spec, data_from=data_from_all,
-           data_to=data_to_all)
+""".format(pulp=pulp_spec, data_from=data_from,
+           data_to=data_to)
 
     details_with_one_repo = """ * repo from:
      rhel-6-workstation-htb-rpms
@@ -118,11 +119,11 @@ class TestPulpCloneRepos(unittest.TestCase):
 
     details_arch = """ * arches:
      {arches}
-""".format(arches="\n     ".join(data_from_all['arch']))
+""".format(arches="\n     ".join(data_from['arch']))
 
     details_variant = """ * variants:
      {variants}
-""".format(variants="\n     ".join(data_from_all['variant_uid']))
+""".format(variants="\n     ".join(data_from['variant_uid']))
 
     expected_query_from = {
         "release_id": "rhel-7.1",
@@ -142,8 +143,8 @@ class TestPulpCloneRepos(unittest.TestCase):
 
     def setUp(self):
         """Set up variables before tests."""
-        self.data_from_all['arch'] = []
-        self.data_from_all['variant_uid'] = []
+        self.data_from['arch'] = []
+        self.data_from['variant_uid'] = []
 
         self.env = Mock(spec_set=list(self.env_spec.keys()))
         self.env.configure_mock(**self.env_spec)
@@ -171,9 +172,9 @@ class TestPulpCloneRepos(unittest.TestCase):
         client = pulpAdminConfig.__getitem__.return_value
         client.__getitem__.return_value = 'admin'
 
-        clone = PulpCloneRepos(self.env, self.release_from, self.release_to, self.data_from_all['repo_family'],
-                               self.data_from_all['variant_uid'], self.data_from_all['arch'],
-                               self.data_from_all['content_category'], skip_repo_check)
+        clone = PulpCloneRepos(self.env, self.release_from, self.release_to, self.data_from['repo_family'],
+                               self.data_from['variant_uid'], self.data_from['arch'],
+                               self.data_from['content_category'], skip_repo_check)
         actual = clone.details(commit=commit)
 
         # check that class constructor is called once with the value
@@ -197,9 +198,6 @@ class TestPulpCloneRepos(unittest.TestCase):
         # check that there are exactly 2 queries made
         self.assertEquals(instance.__getitem__()._.call_count, 2)
 
-        print(actual)
-        print(expected_details)
-
         # check that the actual details are the same as the expected ones
         self.assertEquals(expected_details, actual, testMethod.__doc__)
 
@@ -220,13 +218,11 @@ class TestPulpCloneRepos(unittest.TestCase):
         client = pulpAdminConfig.__getitem__.return_value
         client.__getitem__.return_value = 'admin'
 
-        clone = PulpCloneRepos(self.env, self.release_from, self.release_to, self.data_from_all['repo_family'],
-                               self.data_from_all['variant_uid'], self.data_from_all['arch'],
-                               self.data_from_all['content_category'], skip_repo_check)
-        '''with self.assertRaises(UsageError) as context:
-            clone.details(commit=commit)'''
+        clone = PulpCloneRepos(self.env, self.release_from, self.release_to, self.data_from['repo_family'],
+                               self.data_from['variant_uid'], self.data_from['arch'],
+                               self.data_from['content_category'], skip_repo_check)
         self.assertRaises(UsageError, clone.details, commit=commit)
-        '''# check that class constructor is called once with the value
+        # check that class constructor is called once with the value
         # of env['pdc_server']
         PDCClientClassMock.assert_called_once_with('pdc-test', develop=True)
 
@@ -244,18 +240,15 @@ class TestPulpCloneRepos(unittest.TestCase):
 
         self.assertEquals(api._.call_args_list, expected_calls)
 
-        # check that there are exactly 2 queries made
-        self.assertEquals(instance.__getitem__()._.call_count, 2)'''
-
     @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
     def test_details_no_commit_one_repo(self, PulpAdminConfigClassMock, PDCClientClassMock):
         """Check details with one repo found and two arches and two variant and with skip-repo-check,
         while not commiting.
         """
-        self.data_from_all['arch'] = ['x86_64', 's390x']
-        self.data_from_all['variant_uid'] = ['Server', 'Workstation']
-        self.data_from_all['content_category'] = 'source'
+        self.data_from['arch'] = ['x86_64', 's390x']
+        self.data_from['variant_uid'] = ['Server', 'Workstation']
+        self.data_from['content_category'] = 'source'
 
         query_result_from = [
             {
@@ -283,13 +276,13 @@ class TestPulpCloneRepos(unittest.TestCase):
         ]
 
         expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from_all['content_category'] +
+                            " * content_category:        %s" % self.data_from['content_category'] +
                             self.details_base_conti + self.details_arch + self.details_variant +
                             self.details_with_one_repo + "*** TEST MODE ***")
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
-            'content_category': self.data_from_all['content_category'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -306,14 +299,14 @@ class TestPulpCloneRepos(unittest.TestCase):
                            expected_query_from, expected_query_to, testMethod, query_result_from,
                            query_result_to, commit, skip_repo_check)
 
-    '''@patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
+    @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
     def test_details_no_commit_more_repo(self, PulpAdminConfigClassMock, PDCClientClassMock):
         """Check details with more repo found and two variants and without skip-repo-check,
         while not commiting.
         """
-        self.data_from_all['variant_uid'] = ['Server', 'Workstation']
-        self.data_from_all['content_category'] = 'source'
+        self.data_from['variant_uid'] = ['Server', 'Workstation']
+        self.data_from['content_category'] = 'source'
         query_result_from = [
             {
                 'arch': 'x86_64',
@@ -344,13 +337,13 @@ class TestPulpCloneRepos(unittest.TestCase):
         ]
 
         expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from_all['content_category'] +
+                            " * content_category:        %s" % self.data_from['content_category'] +
                             self.details_base_conti + self.details_variant +
                             self.details_with_more_repo + "*** TEST MODE ***")
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
-            'content_category': self.data_from_all['content_category'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -365,7 +358,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         testMethod = TestPulpCloneRepos.test_details_no_commit_one_repo
         self.check_details(PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
                            expected_query_from, expected_query_to, testMethod, query_result_from,
-                           query_result_to, commit, skip_repo_check)'''
+                           query_result_to, commit, skip_repo_check)
 
     @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
@@ -373,20 +366,20 @@ class TestPulpCloneRepos(unittest.TestCase):
         """Check details with no repo found and two arches and with skip-repo-check,
         while not commiting.
         """
-        self.data_from_all['arch'] = ['x86_64', 's390x']
-        self.data_from_all['content_category'] = 'source'
+        self.data_from['arch'] = ['x86_64', 's390x']
+        self.data_from['content_category'] = 'source'
 
         query_result_from = []
         query_result_to = []
 
         expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from_all['content_category'] +
+                            " * content_category:        %s" % self.data_from['content_category'] +
                             self.details_base_conti + self.details_arch +
                             self.details_no_repo + "*** TEST MODE ***")
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
-            'content_category': self.data_from_all['content_category'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -409,6 +402,8 @@ class TestPulpCloneRepos(unittest.TestCase):
         """Check details with error and two variants and without skip-repo-check,
         while not commiting.
         """
+        self.data_from['variant_uid'] = ['Server', 'Workstation']
+
         query_result_from = [
             {
                 'arch': 'x86_64',
@@ -434,8 +429,9 @@ class TestPulpCloneRepos(unittest.TestCase):
 
         expected_details = "UsageError: Error"
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -458,9 +454,9 @@ class TestPulpCloneRepos(unittest.TestCase):
         """Check details with one repo found and two arches and two variant and with skip-repo-check,
         when not commiting.
         """
-        self.data_from_all['arch'] = ['x86_64', 's390x']
-        self.data_from_all['variant_uid'] = ['Server', 'Workstation']
-        self.data_from_all['content_category'] = 'source'
+        self.data_from['arch'] = ['x86_64', 's390x']
+        self.data_from['variant_uid'] = ['Server', 'Workstation']
+        self.data_from['content_category'] = 'source'
 
         query_result_from = [
             {
@@ -488,13 +484,13 @@ class TestPulpCloneRepos(unittest.TestCase):
         ]
 
         expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from_all['content_category'] +
+                            " * content_category:        %s" % self.data_from['content_category'] +
                             self.details_base_conti + self.details_arch + self.details_variant +
                             self.details_with_one_repo)
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
-            'content_category': self.data_from_all['content_category'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -511,14 +507,14 @@ class TestPulpCloneRepos(unittest.TestCase):
                            expected_query_from, expected_query_to, testMethod, query_result_from,
                            query_result_to, commit, skip_repo_check)
 
-    '''@patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
+    @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
     def test_details_with_commit_more_repo(self, PulpAdminConfigClassMock, PDCClientClassMock):
         """Check details with more repo found and two variants and without skip-repo-check,
         when commiting.
         """
-        self.data_from_all['variant_uid'] = ['Server', 'Workstation']
-        self.data_from_all['content_category'] = 'source'
+        self.data_from['variant_uid'] = ['Server', 'Workstation']
+        self.data_from['content_category'] = 'source'
         query_result_from = [
             {
                 'arch': 'x86_64',
@@ -549,13 +545,13 @@ class TestPulpCloneRepos(unittest.TestCase):
         ]
 
         expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from_all['content_category'] +
+                            " * content_category:        %s" % self.data_from['content_category'] +
                             self.details_base_conti + self.details_variant +
                             self.details_with_more_repo)
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
-            'content_category': self.data_from_all['content_category'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -570,7 +566,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         testMethod = TestPulpCloneRepos.test_details_no_commit_one_repo
         self.check_details(PDCClientClassMock, PulpAdminConfigClassMock, expected_details,
                            expected_query_from, expected_query_to, testMethod, query_result_from,
-                           query_result_to, commit, skip_repo_check)'''
+                           query_result_to, commit, skip_repo_check)
 
     @patch('releng_sop.pulp_clone_repos.PDCClient', autospec=True)
     @patch('releng_sop.pulp_clone_repos.PulpAdminConfig', autospec=True)
@@ -578,20 +574,19 @@ class TestPulpCloneRepos(unittest.TestCase):
         """Check details with no repo found and two arches and with skip-repo-check,
         when commiting.
         """
-        self.data_from_all['arch'] = ['x86_64', 's390x']
-        self.data_from_all['content_category'] = 'source'
+        self.data_from['arch'] = ['x86_64', 's390x']
 
         query_result_from = []
         query_result_to = []
 
         expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from_all['content_category'] +
+                            " * content_category:        %s" % self.data_from['content_category'] +
                             self.details_base_conti + self.details_arch +
                             self.details_no_repo)
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
-            'content_category': self.data_from_all['content_category'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -614,6 +609,9 @@ class TestPulpCloneRepos(unittest.TestCase):
         """Check details with error and two variants and without skip-repo-check,
         when commiting.
         """
+        self.data_from['variant_uid'] = ['Server', 'Workstation']
+        self.data_from['content_category'] = 'source'
+
         query_result_from = [
             {
                 'arch': 'x86_64',
@@ -639,8 +637,9 @@ class TestPulpCloneRepos(unittest.TestCase):
 
         expected_details = "UsageError: Error"
         expected_query_add = {
-            'arch': self.data_from_all['arch'],
-            'variant_uid': self.data_from_all['variant_uid'],
+            'arch': self.data_from['arch'],
+            'variant_uid': self.data_from['variant_uid'],
+            'content_category': self.data_from['content_category'],
         }
 
         expected_query_from = dict(self.expected_query_from)
@@ -661,8 +660,8 @@ class TestPulpCloneRepos(unittest.TestCase):
                       skip_repo_check, password, addPassword):
         """Check the expected and actual."""
         clone = PulpCloneRepos(self.env, self.release_from, self.release_to,
-                               self.data_from_all['repo_family'], self.data_from_all['variant_uid'],
-                               self.data_from_all['arch'], self.data_from_all['content_category'],
+                               self.data_from['repo_family'], self.data_from['variant_uid'],
+                               self.data_from['arch'], self.data_from['content_category'],
                                skip_repo_check)
 
         clone.cloned = cloned

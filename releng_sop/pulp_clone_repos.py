@@ -18,7 +18,7 @@ Inputs:
 
 Steps:
 
-#  ``pulp-clone-repos FROM_RELEASE_ID TO_RELEASE_ID REPO_FAMILY [--commit] [--variant=] [--arch=] [--skip-repo-check] ...``
+#.  ``pulp-clone-repos FROM_RELEASE_ID TO_RELEASE_ID REPO_FAMILY [--commit] [--variant=] [--arch=] [--skip-repo-check] ...``
 """
 
 from __future__ import print_function
@@ -32,18 +32,20 @@ import argparse
 
 from .common import Environment, Release, Error, UsageError
 from .common_pulp import PulpAdminConfig
-from .kojibase import KojiBase
 
 
-class PulpCloneRepos(KojiBase):
+class PulpCloneRepos(object):
     """Clone Pulp repos.
 
     :param env:                Environment object to be used to execute the commands.
     :type env:                 Environment
     :note env:                 Keys 'pulp_server' and 'pdc_server' are used.
 
-    :param release:            Release object.
-    :type release:             Release
+    :param release_from:       Release object from.
+    :type release_from:        Release
+
+    :param release_to:         Release object to.
+    :type release_to:          Release
 
     :param repo_family:        Repo family to be cleared.
     :type repo_family:         string
@@ -51,15 +53,20 @@ class PulpCloneRepos(KojiBase):
     :param variants:           Variants to be filtered for.
     :type variant:             list of strings
 
-    :param arch:               Architectures to be filtered for.
-    :type arch:                list of strings
+    :param arches:             Architectures to be filtered for.
+    :type arches:              list of strings
+
+    :param content_category:   Content_category to be filtered for.
+    :type content_category:    string
 
     :param skip_repo_check:    Repo_from and repo_to differ, fail instantly unless --skip-repo-check is set.
     :type skip_repo_check:     boolean
     """
 
     def __init__(self, env, release_from, release_to, repo_family, variants, arches, content_category, skip_repo_check):  # noqa: D102
-        super(PulpCloneRepos, self).__init__(env, release_from)
+        self.env = env
+        self.release_id_from = release_from.name
+        self.release_from = release_from
         self.release_id_to = release_to.name
         self.release_to = release_to
         self.repo_family = repo_family
@@ -70,8 +77,8 @@ class PulpCloneRepos(KojiBase):
         self.content_category = content_category
         self.pulp_password = self.pulp_config["client"].get("password")
 
-        self.data_from_all = {
-            "release_id": self.release_id,
+        self.query_data_from = {
+            "release_id": self.release_id_from,
             "service": "pulp",
             "repo_family": self.repo_family,
             "content_format": "rpm",
@@ -81,7 +88,7 @@ class PulpCloneRepos(KojiBase):
             "shadow": False,
         }
 
-        self.data_to_all = {
+        self.query_data_to = {
             "release_id": self.release_id_to,
             "service": "pulp",
             "repo_family": self.repo_family,
@@ -94,13 +101,13 @@ class PulpCloneRepos(KojiBase):
 
     def rearange(self, result):
         """Creating dictionary from repos and to repos."""
-        self.rep = {}
+        rep = {}
         for x in result:
             key = (x['arch'], x['variant_uid'], x['content_category'])
-            if key in self.rep:
+            if key in rep:
                 raise UsageError('Error same key in repos')
-            self.rep[key] = x['name']
-        return self.rep
+            rep[key] = x['name']
+        return rep
 
     def password_prompt(self, force=False, commit=False):
         """Get password to authenticate with Pulp.
@@ -129,44 +136,38 @@ class PulpCloneRepos(KojiBase):
 
     def query_repo(self):
         """Get name of pdc repo_from and pdc repo_to."""
-        if self.data_from_all['release_id'] == self.data_to_all['release_id']:
+        if self.query_data_from['release_id'] == self.query_data_to['release_id']:
             raise UsageError('Release id is same')
         client = PDCClient(self.env["pdc_server"], develop=True)
 
-        self.result_from = client['content-delivery-repos']._(page_size=0, **self.data_from_all)
-        self.result_to = client['content-delivery-repos']._(page_size=0, **self.data_to_all)
+        result_from = client['content-delivery-repos']._(page_size=0, **self.query_data_from)
+        result_to = client['content-delivery-repos']._(page_size=0, **self.query_data_to)
 
-        if not self.result_from or not self.result_to:
-            self.result_from = []
-            self.result_to = []
-
-        if (len(self.result_from) != len(self.result_to)) and (not self.skip_repo_check):
+        if (len(result_from) != len(result_to)) and (not self.skip_repo_check):
             raise UsageError('Error')
 
-        self.rep_from = {}
-        self.rep_to = {}
-
-        self.rep_from = self.rearange(self.result_from)
-        self.rep_to = self.rearange(self.result_to)
+        rep_from = self.rearange(result_from)
+        rep_to = self.rearange(result_to)
 
         self.cloned = []
         self.sameName = []
         self.missDest = []
         self.missSource = []
 
-        while len(self.rep_from):
-            map_key, name = self.rep_from.popitem()
-            if map_key in self.rep_to:
-                if name == self.rep_to[map_key]:
-                    self.sameName.append({'from': name, 'to': self.rep_to[map_key]})
+        while len(rep_from):
+            map_key, name = rep_from.popitem()
+            if map_key in rep_to:
+                if name == rep_to[map_key]:
+                    self.sameName.append({'from': name, 'to': rep_to[map_key]})
                 else:
-                    self.cloned.append({'from': name, 'to': self.rep_to[map_key]})
-                del self.rep_to[map_key]
+                    self.cloned.append({'from': name, 'to': rep_to[map_key]})
+                del rep_to[map_key]
             else:
                 self.missDest.append({'from': name})
-        while len(self.rep_to):
-            map_key, name = self.rep_to.popitem()
+        while len(rep_to):
+            map_key, name = rep_to.popitem()
             self.missSource.append({'to': name})
+        self.cloned = sorted(self.cloned, key=lambda x: sorted(x.values()))
 
     def details(self, commit=False):
         """
@@ -181,14 +182,14 @@ class PulpCloneRepos(KojiBase):
         details = "Pulp clone repos\n"
         details += " * env name:                %s\n" % self.env.name
         details += " * env config:              %s\n" % self.env.config_path
-        details += " * release source           %s\n" % self.release.config_path
+        details += " * release source           %s\n" % self.release_from.config_path
         details += " * PDC server:              %s\n" % self.env["pdc_server"]
-        details += " * release_id from:         %s\n" % self.release_id
+        details += " * release_id from:         %s\n" % self.release_id_from
         details += " * release_id to:           %s\n" % self.release_id_to
         if self.content_category:
             details += " * content_category:        %s\n" % self.content_category
-        if self.data_from_all['content_format']:
-            details += " * content_format:          %s\n" % self.data_from_all['content_format']
+        if self.query_data_from['content_format']:
+            details += " * content_format:          %s\n" % self.query_data_from['content_format']
         details += " * pulp config:             %s\n" % self.pulp_config.name
         details += " * pulp config path:        %s\n" % self.pulp_config.config_path
         details += " * pulp user:               %s\n" % self.pulp_config["client"]["user"]
@@ -202,13 +203,13 @@ class PulpCloneRepos(KojiBase):
             for i in self.variants:
                 details += "     %s\n" % i
         details += " * repo from:\n"
-        if not self.result_from:
+        if not self.cloned:
             details += "     No repos found.\n"
         else:
             for x in self.cloned:
                 details += "     %s\n" % x['from']
         details += " * repo to:\n"
-        if not self.result_to:
+        if not self.cloned:
             details += "     No repos found.\n"
         else:
             for x in self.cloned:
@@ -286,36 +287,36 @@ def get_parser():
     parser.add_argument(
         "from_release_id",
         metavar="FROM_RELEASE_ID",
-        help="PDC release ID, for example 'fedora-24', 'fedora-24-updates'.",
+        help="PDC release ID to clone from, for example 'fedora-24', 'fedora-24-updates'.",
     )
     parser.add_argument(
         "to_release_id",
         metavar="TO_RELEASE_ID",
-        help="PDC release ID, for example 'fedora-24', 'fedora-24-updates'.",
+        help="PDC release ID to clone to, for example 'fedora-24', 'fedora-24-updates'.",
     )
     parser.add_argument(
         "repo_family",
         metavar="REPO_FAMILY",
-        help="It is repo family in PDC.",
+        help="PDC repo family to be considered for cloning.",
     )
     parser.add_argument(
         "--variant",
         metavar="VARIANT",
         dest="variants",
         action="append",
-        help="It is variant in PDC.",
+        help="PDC variant(s) to be considered for cloning.",
     )
     parser.add_argument(
         "--arch",
         metavar="ARCH",
         dest="arches",
         action="append",
-        help="It is arch in PDC.",
+        help="PDC architecture(s) to be considered for cloning.",
     )
     parser.add_argument(
         "--content-category",
         metavar="CON_CATEGORY",
-        help=".",
+        help="PDC content category to be considered for cloning.",
     )
     parser.add_argument(
         "--skip-repo-check",
