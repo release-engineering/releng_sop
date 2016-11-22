@@ -63,7 +63,7 @@ class PulpCloneRepos(object):
     :type skip_repo_check:     boolean
     """
 
-    def __init__(self, env, release_from, release_to, repo_family, variants, arches, content_category, skip_repo_check):  # noqa: D102
+    def __init__(self, env, release_from, release_to, repo_family, variants, arches, content_categories, skip_repo_check):  # noqa: D102
         self.env = env
         self.release_id_from = release_from.name
         self.release_from = release_from
@@ -74,30 +74,8 @@ class PulpCloneRepos(object):
         self.arches = arches
         self.pulp_config = PulpAdminConfig(self.env["pulp_server"])
         self.skip_repo_check = skip_repo_check
-        self.content_category = content_category
+        self.content_categories = content_categories
         self.pulp_password = self.pulp_config["client"].get("password")
-
-        self.query_data_from = {
-            "release_id": self.release_id_from,
-            "service": "pulp",
-            "repo_family": self.repo_family,
-            "content_format": "rpm",
-            "arch": self.arches,
-            "variant_uid": self.variants,
-            "content_category": self.content_category,
-            "shadow": False,
-        }
-
-        self.query_data_to = {
-            "release_id": self.release_id_to,
-            "service": "pulp",
-            "repo_family": self.repo_family,
-            "content_format": "rpm",
-            "arch": self.arches,
-            "variant_uid": self.variants,
-            "content_category": self.content_category,
-            "shadow": False,
-        }
 
     def rearange(self, result):
         """Creating dictionary from repos and to repos."""
@@ -136,12 +114,34 @@ class PulpCloneRepos(object):
 
     def query_repo(self):
         """Get name of pdc repo_from and pdc repo_to."""
-        if self.query_data_from['release_id'] == self.query_data_to['release_id']:
+        query_data_from = {
+            "release_id": self.release_id_from,
+            "service": "pulp",
+            "repo_family": self.repo_family,
+            "content_format": "rpm",
+            "arch": self.arches,
+            "variant_uid": self.variants,
+            "content_category": self.content_categories,
+            "shadow": False,
+        }
+
+        query_data_to = {
+            "release_id": self.release_id_to,
+            "service": "pulp",
+            "repo_family": self.repo_family,
+            "content_format": "rpm",
+            "arch": self.arches,
+            "variant_uid": self.variants,
+            "content_category": self.content_categories,
+            "shadow": False,
+        }
+
+        if self.release_id_from == self.release_id_to:
             raise UsageError('Release id is same')
         client = PDCClient(self.env["pdc_server"], develop=True)
 
-        result_from = client['content-delivery-repos']._(page_size=0, **self.query_data_from)
-        result_to = client['content-delivery-repos']._(page_size=0, **self.query_data_to)
+        result_from = client['content-delivery-repos']._(page_size=0, **query_data_from)
+        result_to = client['content-delivery-repos']._(page_size=0, **query_data_to)
 
         if (len(result_from) != len(result_to)) and (not self.skip_repo_check):
             raise UsageError('Error')
@@ -182,14 +182,16 @@ class PulpCloneRepos(object):
         details = "Pulp clone repos\n"
         details += " * env name:                %s\n" % self.env.name
         details += " * env config:              %s\n" % self.env.config_path
-        details += " * release source           %s\n" % self.release_from.config_path
+        details += " * from release source:     %s\n" % self.release_from.config_path
+        details += " * to release source:       %s\n" % self.release_to.config_path
         details += " * PDC server:              %s\n" % self.env["pdc_server"]
         details += " * release_id from:         %s\n" % self.release_id_from
         details += " * release_id to:           %s\n" % self.release_id_to
-        if self.content_category:
-            details += " * content_category:        %s\n" % self.content_category
-        if self.query_data_from['content_format']:
-            details += " * content_format:          %s\n" % self.query_data_from['content_format']
+        if self.content_categories:
+            details += " * content_categories:\n"
+            for i in self.content_categories:
+                details += "     %s\n" % i
+        details += " * content_format:          %s\n" % 'rpm'
         details += " * pulp config:             %s\n" % self.pulp_config.name
         details += " * pulp config path:        %s\n" % self.pulp_config.config_path
         details += " * pulp user:               %s\n" % self.pulp_config["client"]["user"]
@@ -316,6 +318,8 @@ def get_parser():
     parser.add_argument(
         "--content-category",
         metavar="CON_CATEGORY",
+        dest="content-categories",
+        action="append",
         help="PDC content category to be considered for cloning.",
     )
     parser.add_argument(
@@ -351,7 +355,8 @@ def main():
         env = Environment(args.env)
         release_from = Release(args.from_release_id)
         release_to = Release(args.to_release_id)
-        clone = PulpCloneRepos(env, release_from, release_to, args.repo_family, args.variants, args.arches, args.content_category, args.skip_repo_check)
+        clone = PulpCloneRepos(env, release_from, release_to, args.repo_family, args.variants,
+                               args.arches, args.content_categories, args.skip_repo_check)
         clone.password_prompt(args.commit)
         clone.run(commit=args.commit)
 

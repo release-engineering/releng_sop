@@ -29,7 +29,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         "service": "pulp",
         "repo_family": 'htb',
         "content_format": 'rpm',
-        "content_category": None,
+        "content_category": 'source',
         "arch": ['x86_64', 's390x'],
         "variant_uid": ['Server', 'Workstation'],
         "shadow": False,
@@ -81,21 +81,20 @@ class TestPulpCloneRepos(unittest.TestCase):
     details_base = """Pulp clone repos
  * env name:                {env[name]}
  * env config:              {env[config_path]}
- * release source           {release[config_path]}
+ * from release source:     {release_from[config_path]}
+ * to release source:       {release_to[config_path]}
  * PDC server:              pdc-test
  * release_id from:         {data_from[release_id]}
  * release_id to:           {data_to[release_id]}
-""".format(env=env_spec, release=release_spec_from, data_from=data_from,
-           data_to=data_to)
-
-    details_base_conti = """
+ * content_categories:
+     {data_from[content_category]}
  * content_format:          {data_from[content_format]}
  * pulp config:             {pulp[config]}
  * pulp config path:        {pulp[config_path]}
  * pulp user:               {pulp[user]}
  * repo_family:             {data_from[repo_family]}
-""".format(pulp=pulp_spec, data_from=data_from,
-           data_to=data_to)
+""".format(env=env_spec, release_from=release_spec_from, release_to=release_spec_to,
+           data_from=data_from, data_to=data_to, pulp=pulp_spec)
 
     details_with_one_repo = """ * repo from:
      rhel-6-workstation-htb-rpms
@@ -248,7 +247,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         """
         self.data_from['arch'] = ['x86_64', 's390x']
         self.data_from['variant_uid'] = ['Server', 'Workstation']
-        self.data_from['content_category'] = 'source'
+        self.data_from['content_category'] = ['source']
 
         query_result_from = [
             {
@@ -275,9 +274,7 @@ class TestPulpCloneRepos(unittest.TestCase):
 
         ]
 
-        expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from['content_category'] +
-                            self.details_base_conti + self.details_arch + self.details_variant +
+        expected_details = (self.details_base + self.details_arch + self.details_variant +
                             self.details_with_one_repo + "*** TEST MODE ***")
         expected_query_add = {
             'arch': self.data_from['arch'],
@@ -306,7 +303,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         while not commiting.
         """
         self.data_from['variant_uid'] = ['Server', 'Workstation']
-        self.data_from['content_category'] = 'source'
+        self.data_from['content_category'] = ['source']
         query_result_from = [
             {
                 'arch': 'x86_64',
@@ -336,9 +333,7 @@ class TestPulpCloneRepos(unittest.TestCase):
             }
         ]
 
-        expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from['content_category'] +
-                            self.details_base_conti + self.details_variant +
+        expected_details = (self.details_base + self.details_variant +
                             self.details_with_more_repo + "*** TEST MODE ***")
         expected_query_add = {
             'arch': self.data_from['arch'],
@@ -367,14 +362,12 @@ class TestPulpCloneRepos(unittest.TestCase):
         while not commiting.
         """
         self.data_from['arch'] = ['x86_64', 's390x']
-        self.data_from['content_category'] = 'source'
+        self.data_from['content_category'] = ['source']
 
         query_result_from = []
         query_result_to = []
 
-        expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from['content_category'] +
-                            self.details_base_conti + self.details_arch +
+        expected_details = (self.details_base + self.details_arch +
                             self.details_no_repo + "*** TEST MODE ***")
         expected_query_add = {
             'arch': self.data_from['arch'],
@@ -403,6 +396,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         while not commiting.
         """
         self.data_from['variant_uid'] = ['Server', 'Workstation']
+        self.data_from['content_category'] = ['source']
 
         query_result_from = [
             {
@@ -456,7 +450,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         """
         self.data_from['arch'] = ['x86_64', 's390x']
         self.data_from['variant_uid'] = ['Server', 'Workstation']
-        self.data_from['content_category'] = 'source'
+        self.data_from['content_category'] = ['source']
 
         query_result_from = [
             {
@@ -483,9 +477,7 @@ class TestPulpCloneRepos(unittest.TestCase):
 
         ]
 
-        expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from['content_category'] +
-                            self.details_base_conti + self.details_arch + self.details_variant +
+        expected_details = (self.details_base + self.details_arch + self.details_variant +
                             self.details_with_one_repo)
         expected_query_add = {
             'arch': self.data_from['arch'],
@@ -514,7 +506,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         when commiting.
         """
         self.data_from['variant_uid'] = ['Server', 'Workstation']
-        self.data_from['content_category'] = 'source'
+        self.data_from['content_category'] = ['source']
         query_result_from = [
             {
                 'arch': 'x86_64',
@@ -544,10 +536,7 @@ class TestPulpCloneRepos(unittest.TestCase):
             }
         ]
 
-        expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from['content_category'] +
-                            self.details_base_conti + self.details_variant +
-                            self.details_with_more_repo)
+        expected_details = (self.details_base + self.details_variant + self.details_with_more_repo)
         expected_query_add = {
             'arch': self.data_from['arch'],
             'variant_uid': self.data_from['variant_uid'],
@@ -575,14 +564,12 @@ class TestPulpCloneRepos(unittest.TestCase):
         when commiting.
         """
         self.data_from['arch'] = ['x86_64', 's390x']
+        self.data_from['content_category'] = ['source']
 
         query_result_from = []
         query_result_to = []
 
-        expected_details = (self.details_base +
-                            " * content_category:        %s" % self.data_from['content_category'] +
-                            self.details_base_conti + self.details_arch +
-                            self.details_no_repo)
+        expected_details = (self.details_base + self.details_arch + self.details_no_repo)
         expected_query_add = {
             'arch': self.data_from['arch'],
             'variant_uid': self.data_from['variant_uid'],
@@ -610,7 +597,7 @@ class TestPulpCloneRepos(unittest.TestCase):
         when commiting.
         """
         self.data_from['variant_uid'] = ['Server', 'Workstation']
-        self.data_from['content_category'] = 'source'
+        self.data_from['content_category'] = ['source']
 
         query_result_from = [
             {
