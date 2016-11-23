@@ -26,8 +26,7 @@ import sys
 
 import argparse
 
-from .common import Environment, Release, Error
-from .kojibase import CommandBase
+from .common import Environment, Release, Error, CommandBase
 
 
 class KojiBlockPackageInRelease(CommandBase):

@@ -10,12 +10,6 @@ common
 Koji commands
 ~~~~~~~~~~~~~
 
-kojibase
---------
-.. automodule:: releng_sop.kojibase
-    :members:
-
-
 koji_block_package_in_release
 -----------------------------
 .. automodule:: releng_sop.koji_block_package_in_release

@@ -28,8 +28,7 @@ import argparse
 
 from productmd.composeinfo import verify_label as verify_milestone
 
-from .common import Environment, Release, Error
-from .kojibase import CommandBase
+from .common import Environment, Release, Error, CommandBase
 
 
 class KojiCloneTagForReleaseMilestone(CommandBase):

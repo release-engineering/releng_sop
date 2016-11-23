@@ -28,9 +28,8 @@ import subprocess
 from pdc_client import PDCClient
 import argparse
 
-from .common import Environment, Release, Error, UsageError
+from .common import Environment, Release, Error, UsageError, CommandBase
 from .common_pulp import PulpAdminConfig
-from .kojibase import CommandBase
 
 
 class PulpClearRepos(CommandBase):

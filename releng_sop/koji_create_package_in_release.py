@@ -27,8 +27,7 @@ import sys
 
 import argparse
 
-from .common import Environment, Release, UsageError, Error
-from .kojibase import CommandBase
+from .common import Environment, Release, UsageError, Error, CommandBase
 
 
 class KojiCreatePackageInRelease(CommandBase):
