@@ -63,7 +63,8 @@ class PulpCloneRepos(object):
     :type skip_repo_check:     boolean
     """
 
-    def __init__(self, env, release_from, release_to, repo_family, variants, arches, content_categories, skip_repo_check):  # noqa: D102
+    def __init__(self, env, release_from, release_to, repo_family, variants, arches,  # noqa: D102
+                 content_categories, skip_repo_check):
         self.env = env
         self.release_id_from = release_from.name
         self.release_from = release_from
@@ -276,7 +277,7 @@ class PulpCloneRepos(object):
                 print('Missing destination repo. Cloning from "%s" skipped.' % x['to'])
         if self.missSource:
             for x in self.missSource:
-                print('Missing source repo. Cloning from "%s" skipped.' % x['to'])
+                print('Missing source repo. Cloning to "%s" skipped.' % x['to'])
 
 
 def get_parser():
@@ -318,7 +319,7 @@ def get_parser():
     parser.add_argument(
         "--content-category",
         metavar="CON_CATEGORY",
-        dest="content-categories",
+        dest="content_categories",
         action="append",
         help="PDC content category to be considered for cloning.",
     )
